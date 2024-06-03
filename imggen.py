@@ -26,9 +26,8 @@ items = list(container.query_items(
 
 results = items
 
-#filtered_results = [item for item in results[0]['asistencia'] if not item['presente'] and not item['excusa']]
-filtered_results = [item for item in results[0]['asistencia'] if not item['presente'] and item['excusa']]
-print(filtered_results)
+result_no_excusa = [item for item in results[0]['asistencia'] if not item['presente'] and not item['excusa']]
+result_excusa = [item for item in results[0]['asistencia'] if not item['presente'] and item['excusa']]
 
 
 # Load a default font
@@ -46,7 +45,7 @@ line_spacing = 30
 
 
 # Calculate the height required for the content
-image_height = len(filtered_results) * line_spacing + 100  # Adding some padding
+image_height = len(result_no_excusa) * line_spacing + 100  # Adding some padding
 
 # Create a new blank image with white background
 image_width = max_width + 100  # Adding some padding
@@ -60,10 +59,10 @@ draw = ImageDraw.Draw(image)
 y_position = 50
 
 # Draw the names on the image with bullet points
-for legislador in filtered_results:
+for legislador in result_no_excusa:
     nombre_completo = legislador['nombreCompleto']
     draw.text((50, y_position), f"{bullet} {nombre_completo}", fill=(0, 0, 0), font=font)
     y_position += line_spacing
 
 # Save the image
-image.save("ausente_con_excusa.png")
+image.save("ausente_sin_excusa.png")
