@@ -164,7 +164,7 @@ Fecha: {fecha[:10]}
 
         # Upload latest tweet to the database
         latestTweet = {
-            'id': str(133317),
+            'id': str(latestSesion),
             'fecha': datetime.datetime.now().isoformat()
         }
         containerTW.create_item(body=latestTweet)
