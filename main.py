@@ -118,7 +118,7 @@ Fecha: {fecha[:10]}
 
         # Function to create image
          
-        font_path = "arial.ttf"
+        font_path = "OpenSans-Regular.ttf"
         font_size = 18
         font = ImageFont.truetype(font_path, font_size)
 
