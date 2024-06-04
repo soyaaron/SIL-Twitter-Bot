@@ -1,68 +1,75 @@
+import datetime
 import configparser
 import tweepy
-from azure.cosmos import CosmosClient, exceptions
+import json
+from azure.cosmos import CosmosClient, PartitionKey, exceptions
 from PIL import Image, ImageDraw, ImageFont
 
 config = configparser.ConfigParser()
 config.read('config.ini')
 
-#azure setup 
-endpoint = config.get('Database','endpoint')
-key = config.get('Database','key')
-database_name = config.get('Database','database_name')
-container_name = config.get('Database','container_name')
+# Azure setup
+endpoint = config.get('Database', 'endpoint')
+key = config.get('Database', 'key')
+database_name = config.get('Database', 'database_name')
+container_name = config.get('Database', 'container_name')
+container_aztweets = 'LastestTweet'
 
-# Inicializar el cliente de Cosmos
+# Initialize the Cosmos client
 clientAZ = CosmosClient(endpoint, key)
 database = clientAZ.get_database_client(database_name)
 container = database.get_container_client(container_name)
+containerTW = database.get_container_client(container_aztweets)
 
-# Función para consultar los datos por id_sesion
-query = f"""SELECT top 1 c.sesion.asistencia  FROM c order by c.sesion.resumen_sesion[0].id_sesion desc"""
+# Function to query the latest session data
+queryLatestSesion = "select top 1 c.sesion.resumen_sesion[0].id_sesion from c order by c.sesion.resumen_sesion[0].id_sesion desc"
 items = list(container.query_items(
-        query=query,
+    query=queryLatestSesion,
+    enable_cross_partition_query=True
+))
+latestSesion = items[0]['id_sesion']
+
+queryLastestTweet = "SELECT TOP 1 c.id, c.fecha FROM c ORDER BY c.id DESC"
+itemsLatestTweet = list(containerTW.query_items(
+    query=queryLastestTweet,
+    enable_cross_partition_query=True
+))
+latestTweetId = itemsLatestTweet[0]['id']
+
+print(latestTweetId, latestSesion)
+
+for idSesion in range(int(latestTweetId)+1, int(latestSesion) + 1):  # Ensure the range includes the latest session
+    print("Processing session ID:", idSesion)
+    querySesion = f"""
+        SELECT top 1
+            rs,
+            (SELECT VALUE COUNT(1) 
+             FROM a IN c.sesion.asistencia 
+             WHERE a.presente = false and a.excusa = false) AS cantidadAusentesCount,
+            (SELECT VALUE COUNT(1) 
+             FROM a IN c.sesion.asistencia 
+             WHERE a.excusa = true) AS cantidadExcusasCount
+        FROM c
+        JOIN rs IN c.sesion.resumen_sesion
+        WHERE c.sesion.resumen_sesion[0].id_sesion = {idSesion}
+    """
+    items = list(container.query_items(
+        query=querySesion,
         enable_cross_partition_query=True
     ))
-
-results = items
-
-result_no_excusa = [item for item in results[0]['asistencia'] if not item['presente'] and not item['excusa']]
-result_excusa = [item for item in results[0]['asistencia'] if not item['presente'] and item['excusa']]
-
-
-# Load a default font
-font_path = "arial.ttf"
-font_size = 18
-font = ImageFont.truetype(font_path, font_size)
-
-# Define bullet point character
-bullet = "•"
-
-# Initialize variables
-max_width = 800
-line_spacing = 30
-
-
-
-# Calculate the height required for the content
-image_height = len(result_no_excusa) * line_spacing + 100  # Adding some padding
-
-# Create a new blank image with white background
-image_width = max_width + 100  # Adding some padding
-background_color = (255, 255, 255)
-image = Image.new("RGB", (image_width, image_height), background_color)
-
-# Initialize drawing context
-draw = ImageDraw.Draw(image)
-
-# Set initial position for drawing text
-y_position = 50
-
-# Draw the names on the image with bullet points
-for legislador in result_no_excusa:
-    nombre_completo = legislador['nombreCompleto']
-    draw.text((50, y_position), f"{bullet} {nombre_completo}", fill=(0, 0, 0), font=font)
-    y_position += line_spacing
-
-# Save the image
-image.save("ausente_sin_excusa.png")
+    if items:
+        results = items
+        for item in results:
+            rs = item['rs']
+            cantidadAusentesCount = item['cantidadAusentesCount']
+            cantidadExcusasCount = item['cantidadExcusasCount']
+            cantidadPresentes = rs['cantidadPresentes']
+            totalLegisladores = rs['totalLegisladores']
+            numero = rs['numero']
+            fecha = rs['fecha']
+            source = rs['source']
+            lugar = rs['lugar']
+            idSesion = str(rs['id_sesion'])
+            print(f"Session {idSesion} processed with data.")
+    else:
+        print(f"No data found for session ID: {idSesion}")
