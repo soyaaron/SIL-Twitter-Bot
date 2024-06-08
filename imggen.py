@@ -12,11 +12,7 @@ config = configparser.ConfigParser()
 config.read('config.ini')
 
 # Set up CosmosDB client
-endpoint = 'https://sil-bot-db.documents.azure.com:443/'
-key = 'o5YF7FZfkqIJWAG8vqh5LciXwPst5IwloqPqszb4LMB9gkFQXo73MMFWuzeCjF5pw9ggHpP9FYJxACDbtbdGHw=='
-database_name = 'ToDoList'
-container_name = 'Sesiones'
-container_aztweets = 'LastestTweet'
+
 
 clientAZ = CosmosClient(endpoint, key)
 database = clientAZ.get_database_client(database_name)
