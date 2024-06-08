@@ -37,7 +37,7 @@ result_excusa = [item for item in results[0]['asistencia'] if not item['presente
 def create_image_with_photos(legislators, folder_path, file_name,asistenciaType):
     photos_per_row = 5
     photo_size = 150  # Assuming each photo is 150x150 pixels
-    spacing = 20
+    spacing = 10
     font_path = "OpenSans-Regular.ttf"
     font_size = 14
     font = ImageFont.truetype(font_path, font_size)
@@ -45,7 +45,7 @@ def create_image_with_photos(legislators, folder_path, file_name,asistenciaType)
     # Calculate dimensions for the image
     rows = (len(legislators) + photos_per_row - 1) // photos_per_row
     image_width = photos_per_row * (photo_size + spacing) + spacing
-    image_height = rows * (photo_size + spacing) + spacing + 100  # Extra space for title and names
+    image_height = rows * (photo_size + spacing) + spacing + 50  # Extra space for title and names
     
     # Create a new blank image with white background
     background_color = (255, 255, 255)
