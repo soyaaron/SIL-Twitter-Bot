@@ -2,7 +2,6 @@ name: Run tweeter bot
 
 on:
   schedule:
-    - cron: "05 14 * * *" #10am
     - cron: "05 17 * * *" #3pm
     - cron: "05 23 * * *" #7pm
   workflow_dispatch:
